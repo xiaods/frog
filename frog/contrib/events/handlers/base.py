@@ -88,7 +88,7 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
     def opened(self):
         opened_event = {
             'type': '_opened',
-            'data': {}s
+            'data': {}
         }
         self.dispatch_event(opened_event)
 
