@@ -24,8 +24,8 @@ class NewConnectionHandler(BaseJsonEventHandler):
         print "new connection established"
         return {'type': 'reply', 'data': {'msg': 'welcome'}}
 
-This is pretty much what you need to write to write a websocket application that talks with client
-using an event-driven approach.
+This is pretty much what you need to write to write a websocket application that
+talks with client using an event-driven approach.
 
 
 Benchmark
