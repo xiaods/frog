@@ -22,7 +22,7 @@ class BaseWebSocketApplication(object):
     All application class should subclass this class.
     '''
 
-    __metaclass__ = WebsocketApplicationType
+    __metaclass__ = WebSocketApplicationType
 
     def __init__(self, connection):
         self.connection = connection
