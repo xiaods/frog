@@ -28,6 +28,21 @@ This is pretty much what you need to write to write a websocket application that
 talks with client using an event-driven approach.
 
 
+Example
+=======
+
+$ PYTHONPATH setup ...
+$ export FROG_SETTINGS_MODULE=echo.settings
+$ python echo/manage.py serve
+
+Usage
+=====
+As many utilities are being built into commands, such as create_project or create_handler,
+the detailed usage documentation will be written later.
+
+But if you are looking to give a quick try, you can follow the structure of the echo example.
+
+
 Benchmark
 =========
 
