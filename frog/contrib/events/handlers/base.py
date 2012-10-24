@@ -5,7 +5,6 @@ import cjson
 from ws4py.messaging import TextMessage
 
 from frog.core.handlers.base import BaseWebSocketApplication
-from frog.core.handlers import loading
 from frog.core.websockets import codes
 
 
@@ -23,9 +22,8 @@ class JsonEventHandlerType(type):
         Register all subclass of BaseJsonEventHandler in a
         dictionary for quick lookup.
         '''
-        if not hasattr(cls, 'event_type'):
-            raise TypeError("BaseJsonEventHandler subclasses should have a class \
-                            attribute named 'event_type'")
+        if not attrs.has_key('event_type'):
+            raise TypeError("BaseJsonEventHandler subclasses should have a class attribute named 'event_type'")
         if not hasattr(cls, 'handler_registry'):
             cls.handler_registry = {}
         else:
@@ -37,7 +35,7 @@ class JsonEventHandlerType(type):
             handler_implementation = attrs.get('proceed', None)
             if not callable(handler_implementation):
                 raise RuntimeError("Event handlers should provide an implementation of `proceed()`")
-            if not cls.event_type: # TODO (ctang) More sanity checks probably
+            if cls.event_type: # TODO (ctang) More sanity checks probably
                 cls.handler_registry[cls.event_type] = cls
 
 class BaseJsonEventHandler(object):
@@ -49,11 +47,10 @@ class BaseJsonEventHandler(object):
 
     event_type = None
 
-    def __init__(self, websocket, event_data):
+    def __init__(self, websocket):
         self.websocket = websocket
-        self.event_data = event_data
 
-    def proceed(self):
+    def proceed(self, event_data):
         '''
         All BaseJsonEventHandler subclass should implement this function.
         - return: json, the `event` message to be sent to the client.
@@ -79,6 +76,14 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
     # Built-In event types are not allowed to use.
     builtin_events = ('_opened', '_closed')
 
+    def __init__(self, connection):
+        # All handler instances will be registered in here.
+        # For coming messages, the handler istances will
+        # be reused to proceed the events.
+        self.handlers = {}
+        
+        super(self.__class__, self).__init__(connection)
+
     def to_json(self, message):
         return cjson.decode(message)
 
@@ -90,7 +95,7 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
             'type': '_opened',
             'data': {}
         }
-        self.dispatch_event(opened_event)
+        return self._dispatch('_opened', opened_event, close_if_not_listened=False)
 
     def closed(self, code, reason=None):
         closed_event = {
@@ -100,13 +105,14 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
                 'reason': reason
             }
         }
-        self.dispatch_event(closed_event)
+        return self._dispatch('_closed', closed_event, close_if_not_listened=False)
 
     def received_message(self, message):
-        if not issubclass(message, TextMessage):
+        if not isinstance(message, TextMessage):
             raise TypeError("Not supported message type `%s`." % type(message))
+        print message, ' received'
         try:
-            event = self.string_to_json(str(message)) # TextMessage type
+            event = self.to_json(str(message)) # TextMessage type
         except cjson.DecodeError, e:
             self.connection.close(code=codes.DATA_ERR, reason="This is not a valid json data structure.")
         else:
@@ -114,7 +120,29 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
             encoded_json = self.to_string(json)
             self.response(encoded_json)
 
-    def dispatch_event(self, event, *args, **kwargs):
+    def get_handler(self, event_type):
+        # TODO (ctang) Deal with this inline import
+        # this is currently made to avoid the cycle import
+        from frog.contrib.events.handlers.loading import load_handler
+        handler = self.handlers.get(event_type, None)
+        if handler is None:
+            handler_cls = load_handler(event_type)
+            if handler_cls:
+                # TODO (ctang) Passing in a websocket isn't a good idea, fix later.
+                handler = handler_cls(self.connection)
+                # Register it to the application instance
+                self.handlers[event_type] = handler
+        return handler
+
+    def _dispatch(self, event_type, event, close_if_not_listened=True):
+        handler = self.get_handler(event_type)
+        if handler:
+            return handler.proceed(event['data'])
+        else:
+            if close_if_not_listened:
+                self.connection.close(codes.GOING_AWAY, reason='No handler for event type "%s"' % event_type)
+
+    def dispatch_event(self, event):
         '''
         This function should always return an `event` in json.
         '''
@@ -122,11 +150,4 @@ class JsonEventDispatcherApplication(BaseWebSocketApplication):
         if event_type in self.builtin_events:
             self.connection.close(codes.GOING_AWAY, reason='Builtin event types are not allowed to use.')
         else:
-            data = event['data']
-            handler_cls = loading.get_handler(event_type)
-            if handler_cls:
-                # TODO (ctang) Passing in a websocket isn't a good idea, fix later.
-                handler = handler_cls(self.connection, data, *args, **kwargs)
-                return handler.proceed()
-            else:
-                self.connection.close(codes.GOING_AWAY, reason='No handler for event type "%s"' % event_type)
+            return self._dispatch(event_type, event)
