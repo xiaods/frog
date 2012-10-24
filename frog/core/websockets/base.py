@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # Author: <Chaobin Tang ctang@redhat.com>
-
-from ws4py.server import geventserver
 from ws4py.websocket import WebSocket
 
-from frog.core.handlers.base import BaseApplication
-from frog.core.exceptions import ImproperlyConfiguredError
 from frog.core.handlers import dispatch
 
 
@@ -15,8 +11,8 @@ class ApplicationSocket(WebSocket):
     '''
 
     def __init__(self, *args, **kwargs):
-        self.mount_handler()
         super(self.__class__, self).__init__(*args, **kwargs)
+        self.start_application()
 
     def opened(self):
         '''
@@ -38,8 +34,9 @@ class ApplicationSocket(WebSocket):
         '''
         self.application.received_message(message)
 
-    def mount_handler(self):
+    def start_application(self):
         '''
         Specify a handler (application) for this connection.
         '''
-        self.application = dispatch(self)
+        application_cls = dispatch(self)
+        self.application = application_cls(self)

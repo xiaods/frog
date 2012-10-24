@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # Author: <Chaobin Tang ctang@redhat.com>
+from frog.conf import settings
 from frog.core.handlers.base import BaseWebSocketApplication
 from frog.core.exceptions import ImproperlyConfigured
+from frog.utils.importlib import import_module
 
 
 __all__ = (
@@ -17,11 +19,17 @@ class Dispatcher(object):
         Resolve from the urls.py the configured handler class
         for this websocket.
         '''
-        # TODO (ctang) add the real work here later
-        # looking for a BaseApplication subclass
-        # against the websocket.environ['path']
-        handler_cls = BaseApplication()
-        return handler_cls
+        urls_module_path = settings.URL_CONF
+        try:
+            urls_module = import_module(urls_module_path)
+        except ImportError:
+            raise ImproperlyConfigured("URL_CONF `%s` not found." % urls_module_path)
+        websocket_path = websocket.environ['PATH_INFO']
+        # TODO (ctang) use more sophisticated lookup method
+        app_cls = urls_module.mappings.get(websocket_path, None)
+        if app_cls is None:
+            raise ImproperlyConfigured("No application found listening for connection to this place `%s`" % websocket_path)
+        return app_cls
 
     @classmethod
     def get_handler(cls, websocket):
@@ -32,5 +40,4 @@ class Dispatcher(object):
         if not issubclass(handler_cls, BaseWebSocketApplication):
             raise ImproperlyConfigured("ApplicationSocket.application_class should \
                                             be a subclass of BaseApplication")
-        handler = handler_cls(websocket)
-        websocket.handler = handler
+        return handler_cls

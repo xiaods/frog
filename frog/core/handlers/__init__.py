@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Author: <Chaobin Tang ctang@redhat.com>
-from frog.core.handlers.dispatcher import Dispatch
+from frog.core.handlers.dispatcher import Dispatcher
 
 
 __all__ = (
@@ -9,4 +9,4 @@ __all__ = (
 
 
 def dispatch(client):
-    return Dispatch.get_handler(client)
+    return Dispatcher.get_handler(client)
