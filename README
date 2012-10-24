@@ -24,4 +24,16 @@ class NewConnectionHandler(BaseJsonEventHandler):
         print "new connection established"
         return {'type': 'reply', 'data': {'msg': 'welcome'}}
 
-This is pretty much what you need to write to write a websocket application that talks with client using an event-driven approach.
+This is pretty much what you need to write to write a websocket application that talks with client
+using an event-driven approach.
+
+
+Benchmark
+=========
+
+Frog is based on gevent and ws4py (which comes with a dropped-in replacement over gevent's wsgi handler). 
+It should have advantages that gevent ships. I did a very simple test with my chrome console,
+and my ubuntu virtualized on vmware-fusion with 512mb + 1 core, with opening all kinds of applications
+and my DEV environment, the server and client is able to talk 10,000 times in 5 seconds.
+This is not that good actually, but there are much to do about it. It will be attention in futurn
+versions.
