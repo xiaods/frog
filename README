@@ -37,3 +37,8 @@ and my ubuntu virtualized on vmware-fusion with 512mb + 1 core, with opening all
 and my DEV environment, the server and client is able to talk 10,000 times in 5 seconds.
 This is not that good actually, but there are much to do about it. It will be attention in futurn
 versions.
+
+Dependencies
+============
+
+Frog depends only what ws4py and gevent depended, plus these two packages themselves of course.
