@@ -27,6 +27,24 @@ class NewConnectionHandler(BaseJsonEventHandler):
 This is pretty much what you need to write to write a websocket application that
 talks with client using an event-driven approach.
 
+In client side, the following code will enable the communication with the server:
+
+<script>
+  var server = 'ws://server-host:port/';
+  var connection = new WebSocket(server);
+  connection.onmessage = function(event){
+    console.log(event.data);
+  }
+
+  # a better way is using jquery.websocket for json encoding$decoding.
+  var message = "{'type': 'echo', 'data': {'msg': 'hello world'}}"; 
+
+  connection.send(message);
+</script>
+
+When the script gets executed, it will get a reply from server, which is issued by EchoEventHandler.proceed.
+There is a precise correspondance between 'type' is the json sent from the client and the 'event_type' that is
+defined in the EchoEventHandler.
 
 Example
 =======
