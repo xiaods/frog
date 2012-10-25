@@ -36,7 +36,7 @@ In client side, the following code will enable the communication with the server
     console.log(event.data);
   }
 
-  # a better way is using jquery.websocket for json encoding$decoding.
+  # a better way is using jquery.websocket for json encoding&decoding.
   var message = "{'type': 'echo', 'data': {'msg': 'hello world'}}"; 
 
   connection.send(message);
